@@ -4,7 +4,7 @@ from Windows.BlinkWindow import BlinkWindow
 from Windows.ConfirmCloseWindow import ConfirmCloseWindow
 from Windows.LobbyWindow import LobbyWindow
 from Windows.StatWindow import StatWindow
-from Windows.back import DarkOverlay
+
 
 
 class MainWindow(QMainWindow):
@@ -12,10 +12,6 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__(parent)
         self.showMaximized()
 
-        # Создаем окно для затемнения
-        self.dark_overlay = DarkOverlay()
-        self.dark_overlay.showFullScreen()
-        self.dark_overlay.set_opacity(0)
 
         self.startLobbyWindow()
 
@@ -30,9 +26,6 @@ class MainWindow(QMainWindow):
 
     def startGameWindow(self):
         self.Window = BlinkWindow()
-
-        # Подключаем сигнал обновления времени
-        self.Window.time_updated.connect(self.dark_overlay.set_opacity)
 
         self.setWindowTitle("Гляделки")
         self.setCentralWidget(self.Window)
