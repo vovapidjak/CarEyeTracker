@@ -5,7 +5,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtWidgets import QWidget, QPushButton
 from scipy.spatial import distance
-
+from PyQt5.QtWidgets import QGraphicsOpacityEffect
 
 
 class BlinkWindow(QMainWindow):
@@ -31,8 +31,8 @@ class BlinkWindow(QMainWindow):
         self.back2lobbyButton = QPushButton('Назад'.upper(), self)
         self.back2lobbyButton.setGeometry(810, 600, 350, 100)
         self.back2lobbyButton.setFont(QFont("Times New Roman", 32))
-        self.back2lobbyButton.hide()
-
+        # self.back2lobbyButton.hide()
+        self.back2lobbyButton.raise_()
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.showTime)
@@ -44,6 +44,13 @@ class BlinkWindow(QMainWindow):
         self.cameraLabel.setGeometry(760, 0, 400, 250)  # Размеры для показа видео
         self.cameraLabel.hide()
 
+        # Добавьте QLabel для затемнения
+
+        self.overlayLabel = QLabel(self)
+        self.overlayLabel.setGeometry(0, 0, 1920, 1080)
+        self.overlayLabel.setStyleSheet("background-color: rgba(0, 0, 0, 0);")  # прозрачный черный
+        self.overlayLabel.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self.overlayLabel.raise_()
 
         self.loopedVideoLabel = QLabel(self)
         self.loopedVideoLabel.setGeometry(0, 0, 1920, 1080)  # Размеры для показа зацикленного видео
@@ -74,14 +81,6 @@ class BlinkWindow(QMainWindow):
 
         self.startBlinkButton = QPushButton(self.centralwidget)
         self.startBlinkButton.setGeometry(QRect(180, 389, 398, 86))
-
-
-        # Создание overlayLabel для затемнения экрана
-        self.overlayLabel = QLabel(self.centralwidget)
-        self.overlayLabel.setGeometry(0, 0, 1920, 1080)  # Размеры, соответствующие всему экрану
-        self.overlayLabel.setStyleSheet("background-color: rgba(0, 0, 0, 0);")  # Прозрачный фон по умолчанию
-        self.overlayLabel.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-        self.overlayLabel.raise_()  # Устанавливаем поверх всех виджетов
 
 
         # Лейбл для отображения таймера
@@ -208,7 +207,12 @@ class BlinkWindow(QMainWindow):
         # Обновляем уровень затемнения в зависимости от времени
         max_time = 5  # Максимальное время для полного затемнения
         opacity = min(self.count / (max_time * 10), 1) if self.blinking else 0  # Рассчитываем степень затемнения (0 до 1)
-        self.time_updated.emit(opacity)
+        alpha = int(opacity * 255)
+
+        # Динамически обновляем background-color для overlayLabel
+        self.overlayLabel.setStyleSheet(f"background-color: rgba(0, 0, 0, {alpha});")
+        # self.time_updated.emit(opacity)
+        # self.opacity_effect.setOpacity(opacity)
 
 
     def startBlinking(self):
