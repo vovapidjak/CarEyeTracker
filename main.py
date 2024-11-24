@@ -11,8 +11,6 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
         self.showMaximized()
-
-
         self.startLobbyWindow()
 
     def startLobbyWindow(self):
@@ -24,13 +22,25 @@ class MainWindow(QMainWindow):
         self.ToolTab.buttonExit.clicked.connect(self.startConfirmCloseWindow)
         self.showMaximized()
 
-    def startGameWindow(self):
-        self.Window = BlinkWindow()
+    # def startGameWindow(self):
+    #     self.Window = BlinkWindow()
+    #
+    #     self.setWindowTitle("Гляделки")
+    #     self.setCentralWidget(self.Window)
+    #
+    #     self.Window.back2lobbyButton.clicked.connect(self.startLobbyWindow)
+    #     self.showMaximized()
 
+    def startGameWindow(self):
+        self.Window = BlinkWindow()  # Создаем экземпляр BlinkWindow
         self.setWindowTitle("Гляделки")
         self.setCentralWidget(self.Window)
 
-        self.Window.back2lobbyButton.clicked.connect(self.startLobbyWindow)
+        # Вызываем метод click_button при открытии окна
+        self.Window.click_button()
+
+        # Назначаем кнопку возврата
+        # self.Window.back2lobbyButton.clicked.connect(self.startLobbyWindow)
         self.showMaximized()
 
     def startStatWindow(self):

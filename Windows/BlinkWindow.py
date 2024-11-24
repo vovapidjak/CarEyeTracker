@@ -28,15 +28,14 @@ class BlinkWindow(QMainWindow):
         self.startBlinkButton.setGeometry(810, 480, 350, 100)
 
 
-        self.back2lobbyButton = QPushButton('Назад'.upper(), self)
-        self.back2lobbyButton.setGeometry(810, 600, 350, 100)
-        self.back2lobbyButton.setFont(QFont("Times New Roman", 32))
-        # self.back2lobbyButton.hide()
-        self.back2lobbyButton.raise_()
+        # self.back2lobbyButton = QPushButton('Назад'.upper(), self)
+        # self.back2lobbyButton.setGeometry(810, 600, 350, 100)
+        # self.back2lobbyButton.setFont(QFont("Times New Roman", 32))
+        # self.back2lobbyButton.raise_()
+
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.showTime)
-        # self.timer.raise_()
         self.exitLabel.hide()
 
 
@@ -44,13 +43,13 @@ class BlinkWindow(QMainWindow):
         self.cameraLabel.setGeometry(760, 0, 400, 250)  # Размеры для показа видео
         self.cameraLabel.hide()
 
-        # Добавьте QLabel для затемнения
 
         self.overlayLabel = QLabel(self)
         self.overlayLabel.setGeometry(0, 0, 1920, 1080)
         self.overlayLabel.setStyleSheet("background-color: rgba(0, 0, 0, 0);")  # прозрачный черный
         self.overlayLabel.setAttribute(Qt.WA_TransparentForMouseEvents, True)
         self.overlayLabel.raise_()
+
 
         self.loopedVideoLabel = QLabel(self)
         self.loopedVideoLabel.setGeometry(0, 0, 1920, 1080)  # Размеры для показа зацикленного видео
@@ -73,27 +72,12 @@ class BlinkWindow(QMainWindow):
         self.setObjectName("MainWindow")
         self.resize(733, 532)
 
-
         self.centralwidget = QWidget(self)
         self.centralwidget.setObjectName("centralwidget")
         self.setCentralWidget(self.centralwidget)
 
-
         self.startBlinkButton = QPushButton(self.centralwidget)
         self.startBlinkButton.setGeometry(QRect(180, 389, 398, 86))
-
-
-        # Лейбл для отображения таймера
-        # self.labelTimer = QLabel(self.centralwidget)
-        # self.labelTimer.setGeometry(QRect(680, 50, 600, 300))
-        # font = QFont('Arial BLACK', 36)
-        # font.setStyleStrategy(QFont.PreferAntialias)
-        # self.labelTimer.setFont(font)
-        # self.labelTimer.setAlignment(Qt.AlignCenter)
-        # self.labelTimer.setObjectName("label")
-        # self.labelTimer.setStyleSheet("background-color: rgba(255, 255, 255, 150); color: black;")
-        # self.labelTimer.raise_()
-
 
         self.exitLabel = QLabel(self.centralwidget)
         self.exitLabel.setGeometry(QRect(50, 480, 1000, 600))
@@ -105,9 +89,6 @@ class BlinkWindow(QMainWindow):
     def click_button(self):
         self.startBlinking()
         self.startBlinkButton.hide()
-        # self.exitLabel.show()
-        # self.back2lobbyButton.show()
-        # self.labelTimer.show()
         self.cap = cv2.VideoCapture(0)
         self.cameraLabel.show()
 
@@ -125,7 +106,7 @@ class BlinkWindow(QMainWindow):
 
 
         self.cameraLabel.raise_()
-        # self.labelTimer.raise_()
+
 
     def calculate_EAR(self, eye):
         A = distance.euclidean(eye[1], eye[5])
@@ -178,8 +159,7 @@ class BlinkWindow(QMainWindow):
             self.cameraLabel.setPixmap(QPixmap.fromImage(qt_image))
             self.overlayLabel.show()
             self.overlayLabel.raise_()
-            # self.labelTimer.show()
-            # self.labelTimer.raise_()
+
 
     def update_looped_video(self):
         ret, frame = self.loopedVideoCap.read()
@@ -192,8 +172,7 @@ class BlinkWindow(QMainWindow):
         bytesPerLine = ch * w
         qt_image = QImage(frame.data, w, h, bytesPerLine, QImage.Format_RGB888)
         self.loopedVideoLabel.setPixmap(QPixmap.fromImage(qt_image))
-        # self.labelTimer.show()
-        # self.labelTimer.raise_()
+
 
 
     def showTime(self):
@@ -201,9 +180,6 @@ class BlinkWindow(QMainWindow):
             self.count += 1
         else:
             self.count = 0
-        text = str(self.count / 10)
-        # self.labelTimer.setText(text)
-        # self.labelTimer.setFont(QFont("Arial BLACK", 140))
         # Обновляем уровень затемнения в зависимости от времени
         max_time = 5  # Максимальное время для полного затемнения
         opacity = min(self.count / (max_time * 10), 1) if self.blinking else 0  # Рассчитываем степень затемнения (0 до 1)
@@ -211,8 +187,6 @@ class BlinkWindow(QMainWindow):
 
         # Динамически обновляем background-color для overlayLabel
         self.overlayLabel.setStyleSheet(f"background-color: rgba(0, 0, 0, {alpha});")
-        # self.time_updated.emit(opacity)
-        # self.opacity_effect.setOpacity(opacity)
 
 
     def startBlinking(self):
