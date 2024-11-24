@@ -11,7 +11,13 @@ class BlinkWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        # self.dark_souls_triggered = None
+        self.darkSoulsLabel = None
+        self.darkSoulsTimer = None
+        self.darkSoulsCap = None
         self.setupUi()
+        
+        self.dark_souls_triggered = False  # Флаг для предотвращения повторного запуска
 
         self.face_detected = False  # Флаг для проверки, выполнено ли обнаружение лица
         self.face_coords = None  # Координаты обнаруженного лица
@@ -243,7 +249,62 @@ class BlinkWindow(QMainWindow):
 
         # Динамически обновляем background-color для overlayLabel
         self.overlayLabel.setStyleSheet(f"background-color: rgba(0, 0, 0, {alpha});")
+        if opacity == 1 and not self.dark_souls_triggered:
+            self.dark_souls_triggered = True
+            self.overlayLabel.setStyleSheet("background-color: rgba(0, 0, 0, 0);")  # Сбрасываем затемнение
 
+            # Останавливаем видео
+            self.stop_camera_video()
+            self.stop_main_video()
+
+            # Запускаем воспроизведение darksouls.mp4
+            self.play_dark_souls_video()
+
+    def stop_camera_video(self):
+        """Останавливает видео с камеры."""
+        if self.cap.isOpened():
+            self.cap.release()
+        self.cameraLabel.hide()
+        self.videoTimer.stop()
+
+    def stop_main_video(self):
+        """Останавливает основное видео."""
+        if self.loopedVideoCap.isOpened():
+            self.loopedVideoCap.release()
+        self.loopedVideoLabel.hide()
+        self.loopedVideoTimer.stop()
+
+    def play_dark_souls_video(self):
+        """Воспроизводит видео darksouls.mp4 и возвращает в LobbyWindow."""
+        self.darkSoulsCap = cv2.VideoCapture("darksouls.mp4")
+        self.darkSoulsTimer = QTimer(self)
+        self.darkSoulsLabel = QLabel(self)
+        self.darkSoulsLabel.setGeometry(0, 0, self.width(), self.height())
+        self.darkSoulsLabel.show()
+
+        def update_dark_souls_frame():
+            ret, frame = self.darkSoulsCap.read()
+            if ret:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                h, w, ch = frame.shape
+                bytesPerLine = ch * w
+                qt_image = QImage(frame.data, w, h, bytesPerLine, QImage.Format_RGB888)
+                self.darkSoulsLabel.setPixmap(QPixmap.fromImage(qt_image))
+            else:
+                # Останавливаем воспроизведение после завершения видео
+                self.darkSoulsTimer.stop()
+                self.darkSoulsCap.release()
+                self.darkSoulsLabel.hide()
+                self.return_to_lobby()
+
+        self.darkSoulsTimer.timeout.connect(update_dark_souls_frame)
+        self.darkSoulsTimer.start(30)
+
+    def return_to_lobby(self):
+        """Возвращает в LobbyWindow."""
+        main_window = self.parent()  # Предполагается, что BlinkWindow — центральный виджет MainWindow
+        if main_window:
+            main_window.startLobbyWindow()
 
     def startBlinking(self):
         self.timer.start(100)
