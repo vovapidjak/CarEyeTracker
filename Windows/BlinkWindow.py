@@ -5,17 +5,16 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtWidgets import QWidget, QPushButton
 from scipy.spatial import distance
-from PyQt5.QtWidgets import QGraphicsOpacityEffect
 
 
 class BlinkWindow(QMainWindow):
-    time_updated = pyqtSignal(float)
 
     def __init__(self):
         super().__init__()
         self.setupUi()
 
-
+        self.face_detected = False  # Флаг для проверки, выполнено ли обнаружение лица
+        self.face_coords = None  # Координаты обнаруженного лица
         # Счетчик времени
         self.count = 0
         # Флаг для отслеживания состояния моргания
@@ -121,6 +120,55 @@ class BlinkWindow(QMainWindow):
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             faces = self.hog_face_detector(gray)
 
+            if not self.face_detected:
+                # Выполняем обнаружение лица
+                faces = self.detect_faces(frame)
+                if faces:
+                    face = faces[0]
+                    x, y, w, h = (face.left(), face.top(), face.width(), face.height())
+                    x, y = max(0, x), max(0, y)
+
+                    # Сохраняем координаты и выставляем флаг
+                    self.face_coords = (x, y, w, h)
+                    self.face_detected = True
+
+            if self.face_detected and self.face_coords:
+                # Используем сохраненные координаты для обрезки
+                x, y, w, h = self.face_coords
+                cropped_face = frame[y:y + h, x:x + w].copy()  # Обрезаем область лица
+
+                # Пересчитываем координаты глаз относительно cropped_face
+                for face in faces:
+                    landmarks = self.dlib_facelandmark(gray, face)
+
+                    leftEye = [(landmarks.part(n).x - x, landmarks.part(n).y - y) for n in range(36, 42)]
+                    rightEye = [(landmarks.part(n).x - x, landmarks.part(n).y - y) for n in range(42, 48)]
+
+                    # Обводка левого глаза
+                    for i in range(6):
+                        cv2.line(cropped_face, leftEye[i], leftEye[(i + 1) % 6], (0, 255, 0), 1)
+
+                    # Обводка правого глаза
+                    for i in range(6):
+                        cv2.line(cropped_face, rightEye[i], rightEye[(i + 1) % 6], (0, 255, 0), 1)
+
+                # Конвертируем и отображаем обрезанное лицо с обводкой
+                cropped_face = cv2.cvtColor(cropped_face, cv2.COLOR_BGR2RGB)
+                h, w, ch = cropped_face.shape
+                bytesPerLine = ch * w
+                qt_image = QImage(cropped_face.data, w, h, bytesPerLine, QImage.Format_RGB888)
+                self.cameraLabel.setPixmap(QPixmap.fromImage(qt_image))
+                self.cameraLabel.show()
+            else:
+                # Если лицо не обнаружено, показываем исходное изображение
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                h, w, ch = frame.shape
+                bytesPerLine = ch * w
+                qt_image = QImage(frame.data, w, h, bytesPerLine, QImage.Format_RGB888)
+                self.cameraLabel.setPixmap(QPixmap.fromImage(qt_image))
+                self.cameraLabel.show()
+
+
             for face in faces:
                 landmarks = self.dlib_facelandmark(gray, face)
 
@@ -151,14 +199,22 @@ class BlinkWindow(QMainWindow):
                         # print(self.labelTimer.text())
                         self.timer.stop()  # Остановка таймера
 
-
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            h, w, ch = frame.shape
-            bytesPerLine = ch * w
-            qt_image = QImage(frame.data, w, h, bytesPerLine, QImage.Format_RGB888)
-            self.cameraLabel.setPixmap(QPixmap.fromImage(qt_image))
+            # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            # h, w, ch = frame.shape
+            # bytesPerLine = ch * w
+            # qt_image = QImage(frame.data, w, h, bytesPerLine, QImage.Format_RGB888)
+            # self.cameraLabel.setPixmap(QPixmap.fromImage(qt_image))
+            # self.cameraLabel.setGeometry()
             self.overlayLabel.show()
             self.overlayLabel.raise_()
+
+
+    def detect_faces(self, frame):
+        # Пример использования Dlib для обнаружения лиц
+        detector = dlib.get_frontal_face_detector()
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = detector(gray)
+        return faces
 
 
     def update_looped_video(self):
