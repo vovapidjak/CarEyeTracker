@@ -5,7 +5,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtWidgets import QWidget, QPushButton
 from scipy.spatial import distance
-
+from datetime import datetime
 
 class BlinkWindow(QMainWindow):
 
@@ -16,7 +16,7 @@ class BlinkWindow(QMainWindow):
         self.darkSoulsTimer = None
         self.darkSoulsCap = None
         self.setupUi()
-        
+
         self.dark_souls_triggered = False  # Флаг для предотвращения повторного запуска
 
         self.face_detected = False  # Флаг для проверки, выполнено ли обнаружение лица
@@ -26,6 +26,10 @@ class BlinkWindow(QMainWindow):
         # Флаг для отслеживания состояния моргания
         self.blinking = False
 
+        self.total_time = 0  # Общее время, пока opacity < 1
+        self.recording_time = False  # Флаг для отслеживания записи времени
+        self.stat_timer = QTimer(self)  # Таймер для увеличения общего времени
+        self.stat_timer.timeout.connect(self.increment_total_time)
 
         self.startBlinkButton.setText("НАЧАТЬ ИГРУ")
         self.startBlinkButton.setFont(QFont("Times New Roman", 32))
@@ -236,6 +240,10 @@ class BlinkWindow(QMainWindow):
         self.loopedVideoLabel.setPixmap(QPixmap.fromImage(qt_image))
 
 
+    def increment_total_time(self):
+        if self.recording_time:
+            self.total_time += 1
+
 
     def showTime(self):
         if self.blinking:
@@ -249,6 +257,21 @@ class BlinkWindow(QMainWindow):
 
         # Динамически обновляем background-color для overlayLabel
         self.overlayLabel.setStyleSheet(f"background-color: rgba(0, 0, 0, {alpha});")
+
+        if opacity < 1:
+            if not self.recording_time:
+                self.recording_time = True
+                self.stat_timer.start(100)  # Обновляем каждые 1 секунду
+        else:
+            if self.recording_time:
+                self.recording_time = False
+                self.stat_timer.stop()
+
+                # Записываем общее время в статистику
+                total_time_seconds = self.total_time / 10
+                self.write_stat(total_time_seconds)
+                self.total_time = 0  # Сброс времени
+
         if opacity == 1 and not self.dark_souls_triggered:
             self.dark_souls_triggered = True
             self.overlayLabel.setStyleSheet("background-color: rgba(0, 0, 0, 0);")  # Сбрасываем затемнение
@@ -259,6 +282,18 @@ class BlinkWindow(QMainWindow):
 
             # Запускаем воспроизведение darksouls.mp4
             self.play_dark_souls_video()
+
+    def write_stat(self, total_time):
+        # Получаем текущую дату и время
+        current_time = datetime.now().strftime("%d:%m:%Y %H:%M:%S")
+
+        # Форматируем запись
+        record = f"{current_time}\t\t{total_time}с\n"
+
+        # Записываем в файл
+        with open("stat.txt", "a", encoding="utf-8") as file:
+            file.write(record)
+
 
     def stop_camera_video(self):
         """Останавливает видео с камеры."""
